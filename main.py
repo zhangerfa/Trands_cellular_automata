@@ -4,7 +4,6 @@ pip install xlwt
 '''
 
 from road import *
-from lane import *
 import xlwt
 
 '''
