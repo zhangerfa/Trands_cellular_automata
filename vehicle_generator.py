@@ -1,5 +1,6 @@
 import random
 from math import exp
+from vehicle_enum import Direction
 
 
 # 车辆生成器
@@ -20,7 +21,11 @@ class Vehicle_generator:
                 break
 
     # 返回新生成的交通参与者 如果无法生成返回None
-    def new_vehicle(self, lane, road):
+    '''
+    @:param : direction 在道路一侧生成该行驶方向的车辆，默认为向右
+    '''
+
+    def new_vehicle(self, lane, road, direction=Direction.right):
         new_vehicle = None
         # 当前车道如果有空间 且有车辆到达则生成一个车辆对象
         if self.__has_vehicle() and has_room(lane, road):
@@ -30,7 +35,8 @@ class Vehicle_generator:
                 # max_of_range 为该类车辆区间上限
                 vehicle_type = self.range_type[max_of_range]
                 if max_of_range > random_num:
-                    new_vehicle = vehicle_type(self.vehicle_count, lane, 1, road)
+                    x = road.length - 1 if direction == Direction.left else 1
+                    new_vehicle = vehicle_type(self.vehicle_count, lane, x, road)
                     self.vehicle_count += 1
                     break
         return new_vehicle
@@ -44,9 +50,10 @@ class Vehicle_generator:
         else:
             return False
 
-# 判断传入车道是否有位置供新到达车辆生成
+
+# 传入车道 有 3 个空元胞时 则认为有供新到达车辆生成的空间
 def has_room(lane, road):
-    for x in range(road.lane_num):
-        if road.space[lane][x] != 0:
+    for x in range(3):
+        if road.space.index_space[lane][x] != 0:
             return False
     return True
