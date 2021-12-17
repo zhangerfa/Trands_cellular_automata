@@ -7,28 +7,11 @@
 import matplotlib.pyplot as plt
 
 
-# 运行动画展示
-def show(road, time_max):
-    # 创建画布
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    # 运行仿真
-    for time in range(time_max):
-        # 道路状态更新
-        road.update()
-        # 图像更新
-        plt.cla()
-        draw(ax, road)
-        plt.pause(0.1)
-    # 删除画布
-    plt.close(fig)
-
-
 # 画图函数
 def draw(ax, road):
     # 网格线范围
     y_min = 0
-    y_max = road.lane_num + 1
+    y_max = road.space.lane_num + 1
     x_min = 0
     x_max = road.length + 1
     # 纵线
@@ -41,16 +24,18 @@ def draw(ax, road):
     # 绘制车辆
     for v in road.vehicles:
         # 车辆左下角坐标
-        x = v.x + 1 - v.length
-        y = v.lane
-        # 画出一个矩形
-        rect = plt.Rectangle((x, y), v.length, 1, facecolor=v.color.value)
-        ax.add_patch(rect)
+        vehicle_range = v.get_space_range()
+        for position in vehicle_range:
+            x = position[1]
+            y = position[0]
+            # 画出一个矩形
+            rect = plt.Rectangle((x, y), 1, 1, facecolor=v.color.value)
+            ax.add_patch(rect)
     plt.xlim(0, road.length)
-    plt.ylim(-1, road.lane_num)
+    plt.ylim(-1, road.space.lane_num)
     # 绘制分界线
-    for lane_index in range(road.lane_num):
-        lane = road.lanes[lane_index]
+    for lane_index in range(road.space.lane_num):
+        lane = road.space.lanes[lane_index]
         for end_x in lane.end_x_section_dict:
             plt.plot([end_x, end_x], [lane_index, lane_index + 1], 'k')
     # x y 轴等比例
