@@ -13,46 +13,49 @@
 
     # 小汽车类
     class Car(Vehicle):
-        length = 2  # 车辆长度
-        color = Color.red  # 车辆颜色
-        sp = 2  # dt时间内车辆平均行驶的距离
-        s_max = 4  # 在dt时间内车辆的最大行驶距离 也就是v_max
-        gap_desire = 12  # 期望前车距
 
-        # 更新车速
-        def __update_v(self):
-            pass
-
-        # 判断能否向传入方向换道
-        def can_change_lane(self, direction):
-            pass
-
-        # 判断是否需要换道
-        def need_change_lane(self)
-            pass
-    
-    # 货车类
-    class Truck(Vehicle):
-        length = 4
-        color = Color.blue
-        sp = 2
-        s_max = 3
-        gap_desire = 9
+        def __init__(self, index, lane, x, road):
+            super().__init__(index, lane, x, road)
+            self.length = 2  # 车辆长度
+            self.color = Color.red  # 车辆颜色
+            self.sp = 2  # dt时间内车辆平均行驶的距离
+            self.s_max = 4  # 在dt时间内车辆的最大行驶距离 也就是v_max
+            self.gap_desire = 12  # 期望前车距
 
         # 更新车速
         def __update_v(self):
             self.v = 10
-            
-                # 更新车速
-        def __update_v(self):
-            pass
 
         # 判断能否向传入方向换道
         def can_change_lane(self, direction):
             pass
 
-        # 判断是否需要换道
-        def need_change_lane(self)
+        # 将车辆换道至传入车道
+        def update_lane(self, desire_lane):
+            pass
+
+
+    # 货车类
+    class Truck(Vehicle):
+
+        def __init__(self, index, lane, x, road):
+            super().__init__(index, lane, x, road)
+            self.length = 4
+            self.color = Color.blue
+            self.sp = 2
+            self.s_max = 3
+            self.gap_desire = 9
+
+        # 更新车速
+        def __update_v(self):
+            self.v = 10
+
+        # 判断能否向传入方向换道
+        def can_change_lane(self, direction):
+            pass
+
+        # 将车辆换道至传入车道
+        def update_lane(self, desire_lane):
             pass
 
 ### 构建测试场景
