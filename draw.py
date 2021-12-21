@@ -1,7 +1,6 @@
 # 换道函数
 """
-车辆坐标是 车辆最前方（前进方向）元胞的 左下角
-整个车辆所占矩形的左下角坐标为 (vehicle.lane, vehicle.x + 1 - vehicle.length)
+每个元胞的坐标左下角坐标
 """
 
 import matplotlib.pyplot as plt
@@ -11,9 +10,9 @@ import matplotlib.pyplot as plt
 def draw(ax, road):
     # 网格线范围
     y_min = 0
-    y_max = road.space.lane_num + 1
+    y_max = road.space.lane_num
     x_min = 0
-    x_max = road.length + 1
+    x_max = road.length
     # 纵线
     for x in range(x_max):
         plt.plot([x, x], [y_min, y_max], 'k', linewidth=0.5)
@@ -42,10 +41,3 @@ def draw(ax, road):
     ax.set_aspect('equal', adjustable='box')
     # 隐藏坐标轴
     plt.axis('off')
-
-    # # 绘制施工区
-    # lane = road.lanes[road.shortest_lane]  # 施工路段
-    # startx_x = lane.length
-    # length = road.length - startx_x
-    # rect = plt.Rectangle((startx_x, road.shortest_lane), length, 1, facecolor=[0, 1, 0])
-    # ax.add_patch(rect)
