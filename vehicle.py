@@ -10,6 +10,8 @@ class Vehicle:
     # 需要维护的车辆周围车辆信息列表
     around_list = [Around.front, Around.back, Around.left_front, Around.left_back,
                    Around.right_front, Around.right_back]
+    length = 1  # 车辆长度
+    width = 1  # 车辆宽度
 
     def __init__(self, index, lane, x, road, direction=Direction.right):
         self.direction = direction  # 车辆前进方向 默认向右
@@ -18,8 +20,6 @@ class Vehicle:
         self.v = 0  # 车辆车速
         self.lane = lane  # 车辆位于车道
         self.driving_on = road  # 车辆行驶于该道路对象
-        self.length = 1  # 车辆长度
-        self.width = 1  # 车辆宽度
         self.front = None  # 前车
         self.back = None  # 后车
         self.left_front = None  # 左前车
@@ -45,19 +45,12 @@ class Vehicle:
             # 遍历换道方向(当前车道+1 -1) 直到换道 或 所有方向无法换道
             for direction in Direction:
                 if self._can_change_lane(direction):
-                    desire_lane = self.lane + direction.value
-                    self.lane = desire_lane
+                    self.update_lane(direction)
                     return
 
     # 获取车辆所在所有元胞的坐标  （越界值也会返回）
     def get_space_range(self):
-        space_range = []  # 车辆所在所有元胞的坐标
-        for delta_x in range(self.length):
-            for delta_lane in range(self.width):
-                cur_lane = self.lane - delta_lane
-                cur_x = self.x - delta_x * self.direction.value
-                space_range.append([cur_lane, cur_x])
-        return space_range
+        return self.driving_on.space.get_range([self.lane, self.x], self.length, self.width, self.direction)
 
     def toString(self):
         out = self.information()
@@ -183,6 +176,9 @@ class Vehicle:
     def get_lane_length(self):
         return self.driving_on.space.lanes[self.lane].length
 
+    # 判断传入方向是否有车
+    def has_next_to(self, direction):
+        return self.driving_on.space.has_next_to(self, direction)
 
 # 计算两辆车之间的前车距
 def get_distance(v1, v2):
@@ -209,4 +205,4 @@ class Wall(Vehicle):
 
     # 墙体永远不会移动， 且会阻碍车辆移动
     def _update_v(self):
-        v = 0
+        self.v = 0
