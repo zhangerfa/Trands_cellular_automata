@@ -16,8 +16,14 @@ class Road:
         self.detector = detector  # 检测器
         self.length = max([x.length for x in lanes])  # 最大车道长度为道路长度
         self.space = Space(lanes, self.length)  # 道路空间
+        self.lane_num = len(lanes)
         # 非车道部分添加墙体对象
         self.__generate_walls()
+
+    # 运行仿真并获取数据字典
+    def get_data_dict(self, time_max):
+        self.run(time_max)
+        return self.detector.data_processing()
 
     # 运行仿真
     def run(self, time_max):
@@ -25,7 +31,7 @@ class Road:
             # 道路状态更新
             self.update()
             # 检测器检测所有车辆
-            self.detector.detect(self.vehicles)
+            self.detector.detect(time, self.vehicles)
 
     # 运行动画展示
     def show(self, time_max):
@@ -64,11 +70,15 @@ class Road:
     def add_vehicle(self, vehicle):
         self.vehicles.append(vehicle)
         self.space.add_vehicle(vehicle)
+        # 去重
+        self.vehicles = list(set(self.vehicles))
 
     # 将车辆对象从道路中移出
     def remove_vehicle(self, vehicle):
-        self.vehicles.remove(vehicle)
-        self.space.remove_vehicle(vehicle)
+        # 添加时保证vehicles没有重复 就只需要去除一次
+        while vehicle in self.vehicles:
+            self.vehicles.remove(vehicle)
+            self.space.remove_vehicle(vehicle)
 
     def toString(self):
         for i in range(self.length):
@@ -149,7 +159,7 @@ class Road:
                 # 车辆换道
                 v.change_lane()
                 # 计算下一时刻位置
-                infomation = v.information() # 记录位置更新前信息
+                infomation = v.information()  # 记录位置更新前信息
                 last_time_gap = v.get_gap()
                 front = v.front  # 记录更新位置前的前车
                 if front is not None and type(front) != Wall:
@@ -242,18 +252,59 @@ class Space:
         else:
             print('flag输入有误')
             return
-        for x in find_range:
-            if self.space[lane][x] != 0:
-                if self.space[lane][x] != vehicle:
-                    return self.space[lane][x]
+        min_gap = float('inf')
+        front = None
+        for cur_lane in range(vehicle.lane, vehicle.lane + vehicle.width):
+            for x in find_range:
+                if self.space[lane][x] != 0 and self.space[lane][x] != vehicle:
+                    cur_gap = abs(x - start_x)
+                    if cur_gap < min_gap:
+                        front = self.space[lane][x]
+            return front
         return None
 
     # 获取车辆所在位置的道路类型
     def which_section(self, vehicle):
-        end_x_ls = [x for x in self.lanes[vehicle.lane].end_x_section_dict.keys()]
-        for end_x in end_x_ls:
+        end_x_list = self.get_section_end_x_list(vehicle.lane)
+        for end_x in end_x_list:
             if end_x > vehicle.x:
                 return self.lanes[vehicle.lane].end_x_section_dict[end_x]
+
+    # 判断输入车辆在传入方向旁边是否有车
+    def has_next_to(self, vehicle, direction):
+        lane = vehicle.lane - vehicle.direction.value * direction.value
+        x = vehicle.x
+        space_range = self.get_range([lane, x], vehicle.length, vehicle.width, vehicle.direction)
+        for position in space_range:
+            if self.is_position_legal(position):
+                lane = position[0]
+                x = position[1]
+                if self.space[lane][x] not in [0, vehicle]:
+                    return True
+        return True
+
+    # 判断坐标是否合法
+    def is_position_legal(self, position):
+        lane = position[0]
+        x = position[1]
+        if not 0 <= lane < self.lane_num:
+            return False
+        if not 0 <= x < self.length:
+            return False
+        return True
+
+    # 获取传入坐标、长宽、方向的车辆所占的空间
+    @staticmethod
+    def get_range(position, length, width, direction):
+        lane = position[0]
+        x = position[1]
+        space_range = []  # 车辆所在所有元胞的坐标
+        for delta_x in range(length):
+            for delta_lane in range(width):
+                cur_lane = lane - delta_lane
+                cur_x = x - delta_x * direction.value
+                space_range.append([cur_lane, cur_x])
+        return space_range
 
     # 更新space矩阵 将传入范围改为该值
     '''
@@ -269,6 +320,10 @@ class Space:
             if 0 <= lane < self.lane_num and 0 <= x < self.length:
                 self.space[lane][x] = values[0]
                 self.index_space[lane][x] = values[1]
+
+    # 返回输入车道各部分的end_x list
+    def get_section_end_x_list(self, lane):
+        return list(self.lanes[lane].end_x_section_dict.keys())
 
 
 # 车道数据记录类
