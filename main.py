@@ -5,6 +5,7 @@ from vehicle import Vehicle
 from enum import Enum
 from vehicle_enum import Color
 from detector import Detector
+import xlwt
 
 
 #### 创建仿真使用的车辆类
@@ -16,57 +17,17 @@ class Car(Vehicle):
     gap_desire = 12  # 期望前车距
     p = 0.2  # 随机慢化概率
     p2 = 0.35  # M1段车道3处随机慢化概率
-
-    def __init__(self, index, lane, x, driving_on, direction):
-        super().__init__(index, lane, x, driving_on, direction)
-        self.length = 2  # 车辆长度
-        self.change_lane_times = 0  # 记录车辆换道次数
+    length = 2  # 车辆长度
 
     # 更新车速
     def _update_v(self):
         gap = max(self.get_gap(), 0)
-        a = random.randint(1, self.a_max)
-        self.v = min(self.v + a, self.v_max, gap)
         # 车辆在M1段
         section = self.get_section()
-        condition1 = section == Section.M1
-        # 车辆在施工车道
-        lane_length = self.get_lane_length()
-        condition2 = lane_length < self.driving_on.length
-        if condition1 and condition2:
-            p_slow = self.p2
+        if section == Section.M1:
+            self.v = min(self.v + 1, self.v_max, gap)
         else:
-            p_slow = self.p
-        if random.random() < p_slow:
-            self.v = max(self.v - a, 0)
-
-    def change_lane(self):
-        '''
-        优先向非施工车道换道
-        '''
-        # 更新车辆周围信息
-        self.update_around()
-        if self._need_change_lane():
-            # 需要换道判断向哪换道
-            if self.lane == 0:
-                if self._can_change_lane(Direction.left):
-                    self.update_lane(Direction.left)
-                    self.change_lane_times += 1
-            elif self.lane == 2:
-                if self._can_change_lane(Direction.right):
-                    self.update_lane(Direction.right)
-                    self.change_lane_times += 1
-            else:
-                # 施工车道
-                lane_length = self.driving_on.space.lanes[0].length  # 所在车道长度
-                bulid_lane = 0 if lane_length < self.driving_on.length else 2  # 施工车道
-                # 换道方向顺序
-                directions = [Direction.left, Direction.right] if bulid_lane == 0 else [Direction.right, Direction.left]
-                for direction in directions:
-                    if self._can_change_lane(direction):
-                        self.update_lane(direction)
-                        self.change_lane_times += 1
-                        break
+            self.v = min(self.v + 2, self.v_max, gap)
 
     # 判断能否向传入方向换道
     def _can_change_lane(self, direction):
@@ -77,11 +38,15 @@ class Car(Vehicle):
         '''
         gap = self.get_gap()  # 前车距
         if direction == Direction.right:
+            if self.lane == 0:
+                return False
             gap_desire_front = self.get_gap_right()  # 右前车距
             gap_desire_back = self.get_gap_back_right()  # 右后车距
         else:
+            if self.lane == self.driving_on.lane_num - 1:
+                return False
             gap_desire_front = self.get_gap_left()  # 左前车距
-            gap_desire_back = self.get_gap_back_left()  # 右后车距
+            gap_desire_back = self.get_gap_back_left()  # 左后车距
         if gap_desire_front > gap and gap_desire_back > self.v_max:
             return True
         else:
@@ -107,10 +72,7 @@ class Truck(Car):
     v_max = 5  # 最大速度
     gap_desire = 12  # 期望前车距
     p = 0.3  # 随机慢化概率
-
-    def __init__(self, index, lane, x, driving_on, direction):
-        super().__init__(index, lane, x, driving_on, direction)
-        self.length = 4
+    length = 4
 
 
 #### 构建测试场景
@@ -121,42 +83,102 @@ class Section(Enum):
     M2 = '施工路段'
 
 
-# 创建车辆生成器
-lam = 0.4  # 到达率
-vehicle_generator = Vehicle_generator({Car: 0.5, Truck: 0.5}, lam, True)
-
-# 创建车道对象
-L1 = Lane({Section.M0: 100, Section.M1: 50, Section.M2: 50})
-L2 = Lane({Section.M0: 100, Section.M1: 50, Section.M2: 50})
-L3 = Lane({Section.M0: 100, Section.M1: 50})
-lanes = [L1, L2, L3]
-
-
 # 创建检测器(基础检测器可以检测道路流量、平均车速)
 class MyDector(Detector):
+
+    # 将新增检测数据添加到监测数据字典{数据名称: 默认值}
+    def __init__(self, time_range, space_range):
+        super().__init__(time_range, space_range)
+        self.vehicles_data['change_lane_times'] = 0
+
     def start_detect_event(self, vehicle):
+        super(MyDector, self).start_detect_event(vehicle)
         # 第一次检测到车辆时记录车辆换道次数
-        self.detecing_vehicles[vehicle]['change_lane_times'] = vehicle.change_lane_times
+        self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times'] = vehicle.change_lane_times
 
     def finish_detect_event(self, vehicle):
+        super(MyDector, self).finish_detect_event(vehicle)
         # 最后一次检测到车辆时计算在检测路段的换道次数
-        start_times = self.detecing_vehicles[vehicle]['change_lane_times']
-        self.detecing_vehicles[vehicle]['change_lane_times'] = vehicle.change_lane_times - start_times
+        start_times = self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times']
+        self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times'] = vehicle.change_lane_times - start_times
 
-time_max = 5000
-time_range = [1000, time_max]
-space_range = [150, 200]
-detector = MyDector(time_range, space_range)
+    def data_processing(self):
+        out_dict = super(MyDector, self).data_processing()
+        # 计算平均换道次数
+        out_dict['change_lane_times'] = self.completed_vehicles_df.loc[:, 'change_lane_times'].mean()
+        return out_dict
 
-# 创建道路
-road = Road(lanes, vehicle_generator, detector)
+
+def show():
+    # 创建车辆生成器
+    lam = 0.4  # 到达率
+    vehicle_generator = Vehicle_generator({Car: 0.5, Truck: 0.5}, lam)
+
+    # 创建车道对象
+    L1 = Lane({Section.M0: 100, Section.M1: 50, Section.M2: 50})
+    L2 = Lane({Section.M0: 100, Section.M1: 50, Section.M2: 50})
+    L3 = Lane({Section.M0: 100, Section.M1: 50})
+    lanes = [L1, L2, L3]
+
+    time_max = 200
+    time_range = [100, time_max]
+    space_range = [100, 150]
+    detector = MyDector(time_range, space_range)
+
+    # 创建道路
+    road = Road(lanes, vehicle_generator, detector)
+
+    # 展示仿真动画
+    road.show(time_max)
+    # 检测当前规则是否会发生碰撞
+    road.has_accident()
+
 
 #### 运行仿真
 
-# 检测当前规则是否会发生碰撞
-# road.has_accident()
+def generate_data():
+    # 将数据写入excel
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet('sheet1')
+    path = r'.\data.xls'
+    # 写入列名
+    sheet.write(0, 0, 'car_percent')
+    sheet.write(0, 1, 'M1_length')
+    sheet.write(0, 2, 'capacity')
+    sheet.write(0, 3, 'average_speed')
+    sheet.write(0, 4, 'change_lane_frequency')
+    row = 1
 
-# 展示仿真动画
-road.show(time_max)
+    for M1_length in range(8, 2, 48):
+        # 创建车道对象
+        L1 = Lane({Section.M0: 100, Section.M1: M1_length, Section.M2: 50})
+        L2 = Lane({Section.M0: 100, Section.M1: M1_length, Section.M2: 50})
+        L3 = Lane({Section.M0: 100, Section.M1: M1_length})
+        lanes = [L1, L2, L3]
+        # 车辆占比变化
+        for i in range(10):
+            car_percent = i / 10
+            truck_percent = 1 - car_percent
+            # 创建车辆生成器
+            lam = 0.4  # 到达率
+            vehicle_generator = Vehicle_generator({Car: car_percent, Truck: truck_percent}, lam)
+            # 创建检测器
+            time_max = 5000
+            time_range = [1000, time_max]
+            space_range = [100, 100 + M1_length]
+            detector = MyDector(time_range, space_range)
+            # 创建道路
+            road = Road(lanes, vehicle_generator, detector)
+            # 跑数据
+            road.run(time_max)
+            data_dict = road.detector.data_processing()
+            # 写入数据
+            sheet.write(row, 0, car_percent)
+            sheet.write(row, 1, M1_length)
+            write_data(path, data_dict, row)
+            row += 1
+            # 保存在path 中
+            workbook.save(path)
+            print(f'小汽车占比：{car_percent}，M1长度:{M1_length}的数据已保存')
 
-### 数据处理
+show()
