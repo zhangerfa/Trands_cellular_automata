@@ -10,11 +10,11 @@ from src.detector import Detector
 # 创建仿真使用的车辆类
 # 自动驾驶类
 class Auto(Vehicle):
-    a = 4  # 加速度
+    a = 3  # 加速度
     b = 4  # 减速度
     color = Color.red  # 车辆颜色
-    v_max = 7  # 最大速度
-    length = 2  # 车辆长度
+    v_max = 30  # 最大速度
+    length = 5  # 车辆长度
 
     # 更新车速
     def update_v(self):
@@ -79,11 +79,7 @@ class Auto(Vehicle):
 
 # 手动驾驶车类
 class Car(Auto):
-    a = 5  # 加速度
-    b = 5  # 减速度
     color = Color.blue  # 车辆颜色
-    v_max = 6  # 最大速度
-    length = 3
 
     def update_v(self):
         super(Car, self).update_v()
@@ -95,36 +91,36 @@ class Car(Auto):
 
 # 计算随机慢化概率
 def get_p_slow(rou):
-    M = 1000
+    M = 200  # 1千米长的道路上所能容纳的最大车辆数
     return 0.1 + 0.4 * ((1 + M * math.exp(-0.05 * rou)) ** (1 / (-0.95)))
 
 
-def show():
-    # 创建车辆生成器
-    vehicle_num = 60
-    vehicle_generator = Vehicle_generator({Car: 0.5, Auto: 0.5},
-                                          vehicle_num=vehicle_num)
-
-    # 创建车道对象
-    lane_length = 100
-    L1 = Lane({'普通车道': lane_length})
-    L2 = Lane({'普通车道': lane_length})
-    L3 = Lane({'普通车道': lane_length})
-    lanes = [L1, L2, L3]
-
-    time_max = 200
-    time_range = [100, time_max]
-    space_range = [100, 150]
-    detector = Detector(time_range, space_range)
-
-    # 创建道路
-    road = Road(lanes, vehicle_generator, detector)
-
+def show(road):
+    run_time = 100
     # 展示仿真动画
-    road.show(time_max)
+    road.show(run_time)
     # 检测当前规则是否会发生碰撞
     road.has_accident()
 
 
 if __name__ == '__main__':
-    show()
+    # 创建车辆生成器
+    vehicle_num = 60
+    vehicle_generator = Vehicle_generator({Car: 0.5, Auto: 0.5},
+                                          vehicle_num=vehicle_num)
+    # 创建车道对象
+    lane_length = 100  # 2000
+    L1 = Lane({'普通车道': lane_length})
+    lanes = [L1]
+    # 创建检测器
+    detector = Detector()
+    # 创建道路
+    r = Road(lanes, vehicle_generator, detector)
+    run_time = 200  # 20000
+
+    # 仿真展示
+    # show(r)
+
+    # 跑流量
+    r.run(run_time)
+    print(' ')

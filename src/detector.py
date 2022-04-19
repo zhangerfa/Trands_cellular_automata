@@ -1,5 +1,5 @@
 import pandas as pd
-from vehicle import Wall
+from src.vehicle import Wall
 '''
 检测器类——可以检测检测路段某位断面流量和平均车速
 如果需要检测其他数据请继承，并重写以下方法：
@@ -23,16 +23,19 @@ from vehicle import Wall
 注： 一些数据可以通过给车辆对象添加字段来方便检测（如，换道次数）
 '''
 
+# 默认检测所有时间 所有空间
 class Detector:
-    def __init__(self, time_range, space_range):
+    def __init__(self, start_time=0, end_time=float('inf'),
+                 start_x=0, end_x=float('inf'), is_circle_border=False):
         '''
         :param time_range: 检测器检测时间范围
         :param space_range: 检测器检测空间范围
         '''
-        self.start_time = time_range[0]  # 检测器开始检测时间
-        self.end_time = time_range[1]  # 检测器结束检测时间
-        self.start_x = space_range[0]  # 检测器开始检测位置
-        self.end_x = space_range[1]  # 检测器结束检测位置
+        self.start_time = start_time  # 检测器开始检测时间
+        self.end_time = end_time  # 检测器结束检测时间
+        self.start_x = start_x  # 检测器开始检测位置
+        self.end_x = end_x  # 检测器结束检测位置
+        self.is_circle_border = is_circle_border # 是否为周期边界条件
         # 记录 detect_times 次 车辆速度和 最终求平均车速
         self.vehicles_data = {'v_sum': [], 'detect_times': [], 'change_lane_times': []}  # 车辆检测数据
         self.detecing_vehicles_df = pd.DataFrame(self.vehicles_data)  # 正在检测车辆数据表
