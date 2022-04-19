@@ -1,4 +1,4 @@
-from vehicle_enum import Direction
+from src.vehicle_enum import Direction
 
 
 # 空间类（矩形空间）

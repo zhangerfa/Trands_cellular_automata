@@ -1,8 +1,8 @@
-from vehicle import Wall
-from vehicle_enum import Direction
+from src.vehicle import Wall
+from src.vehicle_enum import Direction
+from src.draw import draw
+from src.space import Space
 import matplotlib.pyplot as plt
-from draw import draw
-from space import Space
 
 '''
 @:param vehicle_generator 车辆生成器，用于生成车辆

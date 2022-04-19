@@ -1,6 +1,6 @@
 import random
 from math import exp
-from vehicle_enum import Direction
+from src.vehicle_enum import Direction
 
 
 # 车辆生成器

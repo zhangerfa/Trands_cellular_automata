@@ -3,7 +3,7 @@
 车辆坐标为其最前方（前进方向）元胞坐标
 所有长度单位为元胞（3.75 * 3.75）
 """
-from vehicle_enum import Direction, Color
+from src.vehicle_enum import Direction, Color
 
 
 class Vehicle:
