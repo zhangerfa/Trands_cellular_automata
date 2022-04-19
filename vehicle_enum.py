@@ -14,13 +14,3 @@ class Color(Enum):
 class Direction(Enum):
     left = -1
     right = 1
-
-
-# 周围车辆枚举类
-class Around(Enum):
-    front = 'front'
-    back = 'back'
-    left_front = 'left_front'
-    right_front = 'right_front'
-    left_back = 'left_back'
-    right_back = 'right_back'
