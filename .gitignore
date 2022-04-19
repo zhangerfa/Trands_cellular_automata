@@ -13,3 +13,4 @@ __pycache__/road.cpython-38.pyc
 __pycache__/road.cpython-38.pyc
 __pycache__/vehicle_generator.cpython-38.pyc
 __pycache__/draw.cpython-38.pyc
+*.pyc
