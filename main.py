@@ -1,10 +1,10 @@
 import math
 import random
-from road import *
-from vehicle_generator import Vehicle_generator
-from vehicle import Vehicle
-from vehicle_enum import Color
-from detector import Detector
+from src.road import *
+from src.vehicle_generator import Vehicle_generator
+from src.vehicle import Vehicle
+from src.vehicle_enum import Color
+from src.detector import Detector
 
 
 # 创建仿真使用的车辆类
