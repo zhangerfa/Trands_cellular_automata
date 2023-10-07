@@ -1,6 +1,7 @@
 """
-Road类包含若干Lane对象，提供更新车辆所在车道和车辆周围车辆的方法
-@:param lanes Lane对象列表
+Road由多个Lane组成，Lane由多个Section组成
+同时提供更新车辆周围车辆的方法
+@:param lanes {section类型： 该类型车道长度}
 """
 
 
@@ -10,9 +11,9 @@ class Road:
         self.length = max([x.length for x in lanes])  # 最大车道长度为道路长度
         self.lane_num = len(lanes)
 
-    # 换道时更新车辆所在车道，传入车辆对象和换道方向
-    def update_lane(self, vehicle, direction):
-        pass
+    # 查询车辆所在位置的车道类型
+    def which_section(self, vehicle):
+        return self.lanes[vehicle.lane].which_section(vehicle)
 
     # 车辆跟驰、换道时更新车辆周围车辆信息
     # direction为换道方向，如果为空则表示车辆要进行跟驰

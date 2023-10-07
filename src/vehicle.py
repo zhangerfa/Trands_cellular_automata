@@ -17,12 +17,13 @@ class Vehicle:
               "left_back": None,
               "right_back": None}
 
-    def __init__(self, index, lane, x, direction=Direction.right):
+    def __init__(self, index, lane, x, road, direction=Direction.right):
         self.direction = direction  # 车辆前进方向 默认向右
         self.index = index  # int 用于唯一标识车辆
         self.x = x  # 车道方向位置 车头所在元胞位置
         self.v = 0  # 车辆车速
-        self.lane = lane  # 车辆所在车道对象
+        self.lane = lane  # 车辆所在车道索引
+        self.road = road  # 车辆所在道路
 
     # 车辆换道：找到目标车道，并尝试换道，返回实际换道方向
     def change_lane(self):
@@ -86,7 +87,7 @@ class Vehicle:
 
     # 获取车辆目前所在的车道类型
     def get_section_type(self):
-        return self.lane.which_section(self)
+        return self.road.which_section(self)
 
     # 判断传入方向是否有车
     def has_next_to(self, direction):
