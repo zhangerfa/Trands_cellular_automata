@@ -150,14 +150,6 @@ class Road:
         else:
             return False
 
-    # 获取车辆所在位置的道路类型 车辆不在当前道路 则返回None
-    def which_section(self, vehicle):
-        if vehicle in self.vehicles:
-            return self.space.which_section(vehicle)
-        else:
-            print('车辆不在当前车道')
-            return None
-
     # 获取传入车辆周围车辆信息
     '''
     向右的车辆其左侧车道 + 1 向左行驶车辆其左侧车道 - 1

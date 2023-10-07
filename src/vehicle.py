@@ -137,7 +137,7 @@ class Vehicle:
 
     # 获取车辆目前所在的车道部分
     def get_section(self):
-        return self.driving_on.which_section(self)
+        return self.lane.which_section(self)
 
     def get_lane_length(self):
         return self.driving_on.space.lanes[self.lane].length

@@ -111,7 +111,9 @@ if __name__ == '__main__':
     # 创建车道对象
     lane_length = 100  # 2000
     L1 = Lane({'普通车道': lane_length})
-    lanes = [L1]
+    L2 = Lane({'普通车道': lane_length})
+    L3 = Lane({'普通车道': lane_length})
+    lanes = [L1, L2, L3]
     # 创建检测器
     detector = Detector()
     # 创建道路

@@ -87,13 +87,6 @@ class Space:
                     break
         return front
 
-    # 获取车辆所在位置的道路类型
-    def which_section(self, vehicle):
-        end_x_list = self.get_section_end_x_list(vehicle.lane)
-        for end_x in end_x_list:
-            if end_x > vehicle.x:
-                return self.lanes[vehicle.lane].end_x_section_dict[end_x]
-
     # 判断输入车辆在传入方向旁边是否有车
     def has_next_to(self, vehicle, direction):
         lane = vehicle.lane - vehicle.direction.value * direction.value
