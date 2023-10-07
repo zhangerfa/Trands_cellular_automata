@@ -34,10 +34,6 @@ class Vehicle:
                     self.update_lane(direction)
                     return
 
-    # 获取车辆所在所有元胞的坐标  （越界值也会返回）
-    def get_space_range(self):
-        return self.driving_on.space.get_range([self.lane, self.x], self.length, self.width, self.direction)
-
     def toString(self):
         out = self.information()
         print(out)

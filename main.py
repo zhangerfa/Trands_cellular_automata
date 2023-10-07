@@ -119,8 +119,7 @@ if __name__ == '__main__':
     run_time = 200  # 20000
 
     # 仿真展示
-    # show(r)
+    show(r)
 
     # 跑流量
-    r.run(run_time)
-    print(' ')
+    # r.run(run_time)

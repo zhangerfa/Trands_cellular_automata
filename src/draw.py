@@ -23,7 +23,7 @@ def draw(ax, road):
     # 绘制车辆
     for v in road.vehicles:
         # 车辆左下角坐标
-        vehicle_range = v.get_space_range()
+        vehicle_range = road.space.get_range(v)
         for position in vehicle_range:
             x = position[1]
             y = position[0]

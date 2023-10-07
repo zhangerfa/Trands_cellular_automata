@@ -27,13 +27,13 @@ class Space:
 
     # 将车辆从space中移出
     def remove_vehicle(self, vehicle):
-        space_range = vehicle.get_space_range()
+        space_range = self.get_range(vehicle)
         values = [0, 0]
         self.__update(space_range, values)
 
     # 将车辆添加到space中
     def add_vehicle(self, vehicle):
-        space_range = vehicle.get_space_range()
+        space_range = self.get_range(vehicle)
         values = [vehicle, vehicle.index]
         self.__update(space_range, values)
 
@@ -98,7 +98,7 @@ class Space:
     def has_next_to(self, vehicle, direction):
         lane = vehicle.lane - vehicle.direction.value * direction.value
         x = vehicle.x
-        space_range = self.get_range([lane, x], vehicle.length, vehicle.width, vehicle.direction)
+        space_range = self.get_range(vehicle)
         for position in space_range:
             if self.is_position_legal(position):
                 lane = position[0]
@@ -117,15 +117,15 @@ class Space:
             return False
         return True
 
-    # 获取传入坐标、长宽、方向的车辆所占的空间
-    def get_range(self, position, length, width, direction):
-        lane = position[0]
-        x = position[1]
+    # 获取车辆所在元胞的坐标
+    def get_range(self, vehicle):
+        lane = vehicle.lane
+        x = vehicle.x
         space_range = []  # 车辆所在所有元胞的坐标
-        for delta_x in range(length):
-            for delta_lane in range(width):
+        for delta_x in range(vehicle.length):
+            for delta_lane in range(vehicle.width):
                 cur_lane = lane - delta_lane
-                cur_x = x - delta_x * direction.value
+                cur_x = x - delta_x * vehicle.direction.value
                 if self.is_circle_border:
                     cur_x = cur_x % self.lanes[lane].length
                 space_range.append([cur_lane, cur_x])
