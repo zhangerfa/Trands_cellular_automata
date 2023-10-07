@@ -1,4 +1,4 @@
-from src.vehicle_enum import Direction, Color
+from src.vehicle_enum import Direction
 
 """
 车辆类封装仿真时车辆跟驰、换道的运算规则
@@ -24,15 +24,21 @@ class Vehicle:
         self.v = 0  # 车辆车速
         self.lane = lane  # 车辆所在车道对象
 
-    # 车辆换道：找到目标车道，并试试换道
+    # 车辆换道：找到目标车道，并尝试换道，返回实际换道方向
     def change_lane(self):
         # 判断是否需要换道
         if self.need_change_lane():
             # 遍历换道方向(当前车道+1 -1) 直到换道 或 所有方向无法换道
             for direction in Direction:
                 if self.can_change_lane(direction):
-                    self.update_lane(direction)
-                    return
+                    self.__update_lane(direction)
+                    return direction
+
+    # 实施换道
+    def __update_lane(self, direction):
+        # 向右行驶车辆向右（前进方向）换道lane - 1
+        # 向右行驶车辆向右（前进方向）换道lane + 1
+        self.lane -= self.direction.value * direction.value
 
     '''
     需要被子类重写的方法
@@ -49,12 +55,6 @@ class Vehicle:
     # 判断能否向传入方向换道 默认不能换道
     def can_change_lane(self, direction):
         return False
-
-    # 实施换道
-    def update_lane(self, direction):
-        # 向右行驶车辆向右（前进方向）换道lane - 1
-        # 向右行驶车辆向右（前进方向）换道lane + 1
-        self.lane -= self.direction.value * direction.value
 
     '''
     为跟驰、换道提供的方法
