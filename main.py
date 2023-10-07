@@ -1,9 +1,12 @@
 import math
 import random
+
+from src.draw import Drawer
 from src.road import *
+from src.simulation import Simulation
 from src.vehicle_generator import Vehicle_generator
 from src.vehicle import Vehicle
-from src.vehicle_enum import Color
+from src.vehicle_enum import Color, Direction
 from src.detector import Detector
 
 
@@ -24,7 +27,7 @@ class Auto(Vehicle):
             if random.random() < 0.2:
                 self.v = 0
                 return
-        gap = max(self.get_gap(), 0)
+        gap = max(self.get_front_gap(), 0)
         gap_safe = 1
         v_safe = 1
         if gap > gap_safe:
@@ -37,27 +40,27 @@ class Auto(Vehicle):
 
     # 判断车辆是否为头车
     def __is_forefront(self):
-        if self.front is None and self.x > self.driving_on.length - 2:
+        if self.get_front_gap() + self.length > self.road.length:
             return True
         return False
 
     # 判断能否向传入方向换道
-    def _can_change_lane(self, direction):
+    def can_change_lane(self, direction):
         """
         目标车道前车距 ＞ 当前车道前车距 且 目标车道后车距 ＞ 最大车速
         :param direction: 换道方向 为 Direction枚举类对向
         :return: 能否向传入方向换道
         """
-        gap = self.get_gap()  # 前车距
+        gap = self.__get_gap()  # 前车距
         if direction == Direction.right:
             if self.lane == 0:
                 return False
-            gap_desire_front = self.get_gap_right()  # 右前车距
+            gap_desire_front = self.get_right_front_gap()  # 右前车距
             gap_desire_back = self.get_gap_back_right()  # 右后车距
         else:
-            if self.lane == self.driving_on.lane_num - 1:
+            if self.lane == self.road.lane_num - 1:
                 return False
-            gap_desire_front = self.get_gap_left()  # 左前车距
+            gap_desire_front = self.get_left_front_gap()  # 左前车距
             gap_desire_back = self.get_gap_back_left()  # 左后车距
         if gap_desire_front > gap and gap_desire_back > self.v_max:
             return True
@@ -65,12 +68,12 @@ class Auto(Vehicle):
             return False
 
     # 判断是否需要换道
-    def _need_change_lane(self):
+    def need_change_lane(self):
         """
         如果前车距 ＜ 最大车速 则换道
         :return: 是否换道
         """
-        gap = self.get_gap()  # 前车距
+        gap = self.get_front_gap()  # 前车距
         if gap < self.v_max:
             return True
         else:
@@ -95,14 +98,6 @@ def get_p_slow(rou):
     return 0.1 + 0.4 * ((1 + M * math.exp(-0.05 * rou)) ** (1 / (-0.95)))
 
 
-def show(road):
-    run_time = 100
-    # 展示仿真动画
-    road.show(run_time)
-    # 检测当前规则是否会发生碰撞
-    road.has_accident()
-
-
 if __name__ == '__main__':
     # 创建车辆生成器
     vehicle_num = 60
@@ -110,18 +105,16 @@ if __name__ == '__main__':
                                           vehicle_num=vehicle_num)
     # 创建车道对象
     lane_length = 100  # 2000
-    L1 = Lane({'普通车道': lane_length})
-    L2 = Lane({'普通车道': lane_length})
-    L3 = Lane({'普通车道': lane_length})
-    lanes = [L1, L2, L3]
+    lanes = [{'普通车道': lane_length}] * 3
     # 创建检测器
     detector = Detector()
     # 创建道路
-    r = Road(lanes, vehicle_generator, detector)
-    run_time = 200  # 20000
-
+    r = Road(lanes)
+    run_time = 200  # 仿真时间
+    # 创建仿真对象
+    simulation = Simulation(r, vehicle_generator, detector)
     # 仿真展示
-    show(r)
-
-    # 跑流量
-    # r.run(run_time)
+    drawer = Drawer(simulation)
+    drawer.show(100)
+    # 获取检测器数据
+    data = simulation.run(run_time)
