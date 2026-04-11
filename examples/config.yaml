@@ -1,0 +1,17 @@
+road:
+  lanes:
+    - sections: {"普通车道": 100}
+    - sections: {"普通车道": 100}
+  boundary: open
+
+generator:
+  type: poisson
+  lam: 0.4
+  vehicles:
+    Car: 0.9
+    Auto: 0.1
+
+detector:
+  start_time: 10
+  start_x: 20
+  end_x: 80
