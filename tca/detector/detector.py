@@ -51,11 +51,21 @@ class Detector:
     def to_dataframe(self) -> pd.DataFrame:
         return pd.DataFrame(self._completed)
 
+    def finalize(self):
+        """Move all still-active vehicles to completed (call at end of simulation)."""
+        for vid in list(self._active.keys()):
+            record = self._active.pop(vid)
+            self._completed.append(record)
+
     def summary(self) -> dict:
-        df = self.to_dataframe()
-        if df.empty:
+        all_records = self._completed + list(self._active.values())
+        if not all_records:
             return {"average_speed": 0.0, "flow": self.flow}
-        avg_speeds = df["v_sum"] / df["detect_times"]
+        df = pd.DataFrame(all_records)
+        valid = df[df["detect_times"] > 0]
+        if valid.empty:
+            return {"average_speed": 0.0, "flow": self.flow}
+        avg_speeds = valid["v_sum"] / valid["detect_times"]
         return {
             "average_speed": float(avg_speeds.mean()),
             "flow": self.flow,

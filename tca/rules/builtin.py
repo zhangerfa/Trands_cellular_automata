@@ -15,7 +15,7 @@ class Auto(Vehicle):
     _accel = 3
 
     def update_v(self, ctx: VehicleContext) -> None:
-        gap = ctx.gap_front
+        gap = min(ctx.gap_front, self.v_max + 1)
         gap_safe = 1
         v_safe = 1
         if gap > gap_safe:

@@ -1,142 +1,112 @@
-# Trands_cellular_automata
-本项目用于构建交通流微观仿真的元胞自动机模型
+# TCA — Traffic Cellular Automata
 
- **食用前请注意：**
+交通流微观仿真元胞自动机框架。科研人员通过继承 `Vehicle` 类、重写跟车/换道规则即可构建自定义仿真模型。
 
-本项目为自己OOP练习之作，受限于能力，必然存在错误与不足，不敢保证依次项目所构建模型能达到预计结果，另一方面在性能方面考虑很少，跑模型时用时可能较长。因此，如用作科研请自行检验模型是否可靠，如有错误或改进之处，欢迎issue
-![image](https://github.com/zhangerfa/Trands_cellular_automata/blob/main/helper/%E5%85%83%E8%83%9E%E8%87%AA%E5%8A%A8%E6%9C%BA%E5%B1%95%E7%A4%BA.gif)
+## 安装
 
-## 建模步骤
-详细例子可以看`main.py`，以下抛开具体模型举例
-### 定义自己的车辆类
-定义自己的车辆类，也可以是其他交通参与者，并让自己的车辆类继承`vehicle.Vehicle` 类
-自己定义的车辆类需要实现`void update_v()`方法，更新车辆字段`v`
-如果换道规则中优先向右侧（相对于车辆前进方向）换道 需要实现以下两个方法：
-`boolean can_change_lane(direction) ` 方法判断能否向传入方向换道 `direction`为 `Direction`对象
-`boolean need_change_lane()`判断是否需要换道
-如果有特殊换道顺序（如优先向非施工区换道）则需要重写`road.change_lane(road)`仍然建议实现上述两个方法，并基于这两个方法实现`road.change_lane(road)`,以提高可读性
+```bash
+pip install -e ".[dev]"
+```
 
+## 快速开始
 
+```python
+import random
+from tca import (
+    Vehicle, Lane, Road, Simulation, Detector,
+    CircularBoundary, UniformGenerator, Direction,
+)
 
-    # 小汽车类
-    class Car(Vehicle):
-        a_max = 4  # 最大加速度
-        color = Color.red  # 车辆颜色
-        v_max = 7  # 最大速度
-        length = 2  # 车辆长度
+class NaSchCar(Vehicle):
+    length = 1
+    v_max = 5
+    color = "blue"
 
-        # 更新车速
-        def __update_v(self):
-            self.v = 10
+    def update_v(self, ctx):
+        gap = min(ctx.gap_front, self.v_max + 1)
+        self.v = min(self.v + 1, self.v_max, int(gap))
+        if random.random() < 0.3 and self.v > 0:
+            self.v -= 1
 
-        # 判断能否向传入方向换道
-        def can_change_lane(self, direction):
-            pass
+lanes = [Lane({"road": 200})]
+generator = UniformGenerator({NaSchCar: 1.0}, vehicle_num=40)
+detector = Detector(start_time=100)
+road = Road(lanes, generator, CircularBoundary())
 
-        # 将车辆换道至传入车道
-        def update_lane(self, desire_lane):
-            pass
+sim = Simulation(road, detector)
+sim.run(steps=5000)
+print(detector.summary())
+```
 
-    # 货车类
-    '''
-    货车类具有和小汽车一样的行为时，只需要修改其某些字段
-    '''
-    class Truck(Car):
-        a_max = 2  # 最大加速度
-        color = Color.blue  # 车辆颜色
-        v_max = 5  # 最大速度
-        length = 4
+## 自定义车辆规则
 
-### 构建测试场景
-车道可以由若干段组成，定义自己的车道类型（可以不构建枚举类直接用'str'代替）
+继承 `Vehicle`，重写以下方法：
 
-    # 创建车道类型
-    class LaneType(Enum):
-        M0 = '正常路段'
-        M1 = '变窄路段'
-        M2 = '施工路段'
+- `update_v(ctx)` — 跟车规则，通过 `ctx.gap_front` 等获取邻居信息
+- `need_change_lane(ctx)` — 是否需要换道
+- `can_change_lane(ctx, direction)` — 能否向指定方向换道
 
-基于车道类型创建车道，构建车道需要传入该车道的车道组成（自左到右不同车道类型的长度），以`{laneType1: length1, ...}`形式输入
-（当车道短于其他道路长度（最长车道长度）时，不足部分将补为墙体）
-        
-    # 创建车道对象
-    L1 = Lane({LaneType.M0: 100, LaneType.M1: 50, LaneType.M2: 50})
-    L2 = Lane({LaneType.M0: 100, LaneType.M1: 50, LaneType.M2: 50})
-    L3 = Lane({LaneType.M0: 100, LaneType.M1: 50})
-    
-创建车道对象列表
+`ctx`（`VehicleContext`）提供的属性：
 
-    lanes = [L1, L2, L3]
-    
-还需要定义一个车辆生成器为道路生成车辆，车道生成器可以自己定义 或直接使用`vehicle_generator.Vehicle_generator`，该生成器可以从车道左侧以输入到达率（服从泊松分布）按照输入车辆比例随机生成车辆，以`{Vehicle子类名: 占比, ...}`形式输入
-    
-    # 创建车辆生成器
-    lam = 0.4 # 到达率
-    vehicle_generator = Vehicle_generator({Car: 0.9, Truck: 0.1}, lam)
+| 属性 | 含义 |
+|------|------|
+| `ctx.gap_front` | 前车距 |
+| `ctx.gap_back` | 后车距 |
+| `ctx.gap_left_front` | 左前车距 |
+| `ctx.gap_left_back` | 左后车距 |
+| `ctx.gap_right_front` | 右前车距 |
+| `ctx.gap_right_back` | 右后车距 |
+| `ctx.front` | 前车对象（或 None） |
 
-最后创建检测器以获取需要的仿真数据，检测器可以使用`Dector`,该检测器可以检测指定时间段，指定空间范围内的平均行程车速和检测路段末尾断面流量。或基于`Dector`创建自己的检测器。创建自己的检测器时需要重写以下两个方法：
+## 自定义检测器
 
-`void start_detect_event(vehicle)`  该方法将会在车辆一次被检测时执行 
-`void finish_detect_event(vehicle)` 在车辆最后一次被检测时执行 
+继承 `Detector`，重写钩子方法：
 
-其中，检测器中存储车辆数据的是两个Dataframe，`detecing_vehicles_df`存储正在检测（位于检测时间段和检测空间段内）车辆数据
-`completed_vehicles_df`存储完成检测（不包括未参与检测车辆）的车辆数据
+```python
+class LaneChangeDetector(Detector):
+    def _on_enter(self, vehicle):
+        super()._on_enter(vehicle)
+        self._active[vehicle.id]["initial_lane"] = vehicle.lane
 
-基于上述两个方法和两个Dataframe就可以获取大多数数据，如果需要获取车辆行进间数据，请重写`void detect(vehicles)` 方法（上述两个事件就在此方法中执行），传入车辆对象列表，检测数据并存储到上述两个Dataframe中
+    def _on_exit(self, vehicle):
+        record = self._active[vehicle.id]
+        record["lane_changes"] = abs(vehicle.lane - record["initial_lane"])
+        super()._on_exit(vehicle)
+```
 
-最终仿真数据输出形式除将上述两个Dataframe直接输出外，仍然建议重写 `data_parocessing `方法，将检测器数据处理为需要的格式.
-注： 一些数据可以通过给车辆对象添加字段来方便检测（如，换道次数）
+## CLI 用法
 
-以下以创建可以检测换道次数的检测器为例
+```bash
+# 运行仿真
+tca run examples/config.yaml --steps 10000
 
-    # 创建检测器(基础检测器可以检测道路流量、平均车速)
-    class MyDector(Detector):
+# 运行并导出数据
+tca run examples/config.yaml --steps 10000 --output results.csv
 
-        # 将新增检测数据添加到监测数据字典{数据名称: 默认值}
-        def __init__(self, time_range, space_range):
-            super().__init__(time_range, space_range)
-            self.vehicles_data['change_lane_times'] = 0
+# 动画展示
+tca show examples/config.yaml --steps 500
 
-        def start_detect_event(self, vehicle):
-            super(MyDector, self).start_detect_event(vehicle)
-            # 第一次检测到车辆时记录车辆换道次数
-            self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times'] = vehicle.change_lane_times
+# 保存动画
+tca show examples/config.yaml --steps 500 --save animation.gif
+```
 
-        def finish_detect_event(self, vehicle):
-            super(MyDector, self).finish_detect_event(vehicle)
-            # 最后一次检测到车辆时计算在检测路段的换道次数
-            start_times = self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times']
-            self.detecing_vehicles_df.loc[vehicle.index, 'change_lane_times'] = vehicle.change_lane_times - start_times
+CLI 支持 `rules/builtin.py` 中的内置车辆类型（Auto, Car）。自定义规则请通过 Python 脚本使用。
 
-        def data_processing(self):
-            out_dict = super(MyDector, self).data_processing()
-            # 计算平均换道次数
-            out_dict['change_lane_times'] = self.completed_vehicles_df.loc[:, 'change_lane_times'].mean()
-            return out_dict
-创建检测器
+## 项目结构
 
-    time_range = [100, time_max]
-    space_range = [100, 150]
-    detector = MyDector(time_range, space_range)
+```
+tca/
+├── core/           # 仿真引擎：Grid, Simulation, Boundary
+├── models/         # 领域模型：Vehicle, Road, Lane, Enums
+├── rules/          # 内置规则：NaSch 车辆类型
+├── detector/       # 检测器
+├── generator/      # 车辆生成器
+├── viz/            # 可视化
+└── cli.py          # 命令行入口
+```
 
-最终由车道列表和车辆生成器创建道路，得到仿真对象
-    
-    # 创建道路
-    road = Road(lanes, vehicle_generator, detector)
-    
-### 运行仿真
-定义仿真总时间步
+## 运行测试
 
-    time_max = 100
-
-仿真动画展示，动画展示可以直观观察车辆运行状态，既能帮助判断规则本身及编程实现是否有错，也能对在自身规则下运动的车辆所可能遇到的情况有一个认知
-    
-    road.show(time_max)
-    
-获取仿真数据
-
-    road.run(time_max)
-
-run() 方法运行完毕之后就可以得到检测器对象所存储的运行时获取的数据
-
-### 数据存储
+```bash
+pytest tests/ -v
+```
