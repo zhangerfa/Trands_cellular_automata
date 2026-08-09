@@ -1,3 +1,5 @@
+
+
 # TCA — Traffic Cellular Automata
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org)
@@ -139,7 +141,7 @@ print(sim.detector.summary())
 | `ctx.gap_right_front` | 右前车距 |
 | `ctx.gap_right_back` | 右后车距 |
 | `ctx.front` | 前车 `Vehicle` 对象（无前车时为 `None`） |
-| `ctx.back` | 后车 `Vehicle` 对象 |
+| `ctx.back` | 后车 `Vehicle` 对象（无后车时为 `None`） |
 
 无邻居时返回 `float('inf')`。注意：使用 `int()` 转换前需先截断无穷值，如 `min(ctx.gap_front, self.v_max + 1)`。
 
